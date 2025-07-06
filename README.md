@@ -2,7 +2,36 @@
 *Erstellt von Alexander Graf · Letzte Aktualisierung: 05. Juli 2025*  
 *Lesedauer: ca. 5 Minuten*
 
+---
+
+## 🧪 Projektüberblick
+
+Dieses Projekt stellt eine vollständige Analysepipeline für metagenomische ONT-Daten bereit, die im Rahmen von Umwelt- und Wildtiermonitoring rund um die Zugspitze erhoben wurden.
+
+Ziel ist es, mit Hilfe des `epi2me-labs/wf-metagenomics`-Workflows gezielt das Vorkommen einzelner Spezies wie dem **Schneehuhn (*Lagopus muta*)**, dem **Birkhuhn (*Lyrurus tetrix*)** oder dem **Schneehasen (*Lepus timidus*)** nachzuweisen und zu quantifizieren.
+
+Je nach Fragestellung stehen zwei Analysepfade zur Verfügung:
+
+- **Minimap2-Workflow**:  
+  Speziesspezifische Analyse mit eigenen Referenzgenomen. Ermöglicht gezielte Identifikation und Coverage-Analyse einzelner Zielorganismen.
+
+- **Kraken2-Workflow**:  
+  Breite taxonomische Klassifikation gegen eine umfassende Referenzdatenbank (z. B. PlusPFP-16), insbesondere für **Bakterien, Viren, Pilze, Protozoen, Pflanzen** und **Wirbeltiere** geeignet.
+
+Zur vertieften Qualitätskontrolle steht ein **eigenes Python-Skript `genome_coverage.py`** zur Verfügung, das ausschließlich im Zusammenhang mit dem **Minimap2-Workflow** verwendet werden kann.  
+Es erzeugt interaktive HTML-Berichte mit:
+
+- detaillierten **Coverage-Statistiken**
+- interaktiven **Chromosomenplots und Heatmaps**
+- Navigation durch Regionen und visuelle Bewertung der Abdeckung
+
+Die Analysepipeline eignet sich sowohl für gezielte Artensuche als auch für explorative metagenomische Studien in komplexen Umweltproben.
+
+---
+
 ## 📄 Dokumentation
+
+Die folgenden Links verweisen auf die offiziellen **EPI2ME-Workflows** von Oxford Nanopore Technologies, auf denen dieses Projekt basiert:
 
 - Workflow-Dokumentation:  
   [https://epi2me.nanoporetech.com/epi2me-docs/workflows/wf-metagenomics/](https://epi2me.nanoporetech.com/epi2me-docs/workflows/wf-metagenomics/)
@@ -20,6 +49,8 @@
 | *Lyrurus tetrix* (Birkhuhn) | 1233216 | [GCA_043882375.1](https://www.ncbi.nlm.nih.gov/datasets/genome/GCA_043882375.1/) | Scaffold |
 | *Lagopus muta* (Schneehuhn) | 64668 | [GCF_023343835.1](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_023343835.1/) | Chromosome |
 
+> ⚠️ **Hinweis:** Die Referenzgenomen sollten regelmäßig auf Updates geprüft werden.  
+> Besonders beim Birkhuhn (*Lyrurus tetrix*) liegt derzeit nur ein Scaffold-Level-Assembly vor – d. h. es sind noch keine vollständigen Chromosomen, sondern nur Contigs verfügbar.
 
 ---
 
@@ -29,7 +60,7 @@
 # Conda Umgebung erstellen
 mamba create -n zugspitze_metagenome \
   -c conda-forge -c bioconda \
-  nextflow seqkit kraken2 pysam pandas plotly \
+  nextflow seqkit kraken2 pysam pandas plotly mosdepth \
   --yes
 
 mamba activate zugspitze_metagenome
@@ -38,7 +69,7 @@ mamba activate zugspitze_metagenome
 sudo apt install docker.io
 sudo systemctl enable --now docker
 sudo usermod -aG docker $USER
-newgrp docker
+newgrp docker  # damit Gruppenänderung sofort wirksam wird
 
 # Testlauf zur Installation des Workflows
 nextflow run epi2me-labs/wf-metagenomics --help
@@ -46,6 +77,10 @@ nextflow run epi2me-labs/wf-metagenomics --help
 ---
 
 ## 🧬 Vorbereitung der Referenzgenome
+
+> ⚠️ Dieser Schritt ist **nur für den Minimap2-Workflow** erforderlich.  
+> Beim [Kraken2-Workflow](#-kraken2-datenbank-setup) werden vorgefertigte Datenbanken verwendet (siehe entsprechender Abschnitt).
+
 
 Lade die Referenzgenomen für Schneehuhn (*Lagopus muta*), Birkhuhn (*Lyrurus tetrix*) und Schneehase (*Lepus timidus*) herunter und erstelle eine kombinierte FASTA-Datei sowie einen Minimap2-Index.
 
@@ -96,6 +131,10 @@ cat lepus.tsv lagopus.tsv lyrurus.tsv > ref2taxid.targloci.tsv
 
 ## 🧭 Mapping-Datei für die Coverage-Analyse
 
+> 🐍 Diese Datei wird ausschließlich für das Python-Skript [`genome_coverage.py`](./genome_coverage.py) benötigt,  
+> das eine vertiefte Coverage-Analyse und Visualisierung einzelner Spezies ermöglicht.
+
+
 Für die spätere Coverage-Visualisierung wird eine Mapping-Datei benötigt, die jede FASTA-Sequenz einem der referenzierten Organismen und einem benannten Chromosomen- oder Contignamen zuordnet.
 
 **Beispielzeile:**  
@@ -129,6 +168,14 @@ chmod +x generate_mapping.sh
 ## 🚀 Metagenome-Workflow von Epi2me mit Minimap2
 
 Sobald alle Referenzdateien (Genom, Index, Taxonomie, `ref2taxid`, Mapping) vorbereitet sind, kann die Metagenomanalyse mit Minimap2 gestartet werden.
+
+> ⚠️ Hinweis:  
+> Mit dem Minimap2-Workflow können **nur genau die Spezies erkannt werden**, deren Genome zuvor im Schritt  
+> [🧬 Vorbereitung der Referenzgenome](#-vorbereitung-der-referenzgenome) heruntergeladen und eingebunden wurden.  
+> In diesem Projekt sind das:
+> - *Lagopus muta* (Schneehuhn)
+> - *Lepus timidus* (Schneehase)
+> - *Lyrurus tetrix* (Birkhuhn)
 
 ```bash
 nextflow run epi2me-labs/wf-metagenomics \
@@ -168,7 +215,8 @@ nextflow run epi2me-labs/wf-metagenomics \
 
 ## 🧪 Automatisierte Analyse mit Minimap2
 
-Für die vollständige automatisierte Durchführung des Metagenomik-Workflows inklusive Coverage-Analyse kann das Bash-Skript [`run_metagenome_minimap2.sh`](./run_metagenome_minimap2.sh) verwendet werden.
+Für die vollständige automatisierte Durchführung des Metagenomik-Workflows inklusive Coverage-Analyse kann 
+das Bash-Skript [`run_metagenome_minimap2.sh`](./scripts/run_metagenome_minimap2.sh) verwendet werden.
 
 ### Aufruf:
 
@@ -275,7 +323,7 @@ nextflow run epi2me-labs/wf-metagenomics \
 
 ## 🧪 Automatisierter Workflow mit Kraken2
 
-Für eine automatisierte Analyse mit Kraken2 kann das Skript [`run_metagenome_kraken2.sh`](./run_metagenome_kraken2.sh) verwendet werden.  
+Für eine automatisierte Analyse mit Kraken2 kann das Skript [`run_metagenome_kraken2.sh`](./scripts/run_metagenome_kraken2.sh) verwendet werden.  
 Es ruft den Nextflow-Workflow mit den im Skript definierten Datenbank- und Taxonomie-Pfaden auf.
 
 ### Aufruf
