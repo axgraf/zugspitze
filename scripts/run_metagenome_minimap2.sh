@@ -19,8 +19,8 @@ BIN_SIZE=${4:-10000}  # default: 10000 if not provided
 MINIMAP2_INDEX="referenceGenome/combined_genomes/LeTim_LagMut_LyrTet.genome.mmi"
 REF2TAXID="referenceGenome/combined_genomes/ref2taxid.targloci.tsv"
 TAXDUMP="referenceGenome/taxdump/new_taxdump.tar.gz"
-GENOME_COVERAGE_BED="/home/alex/zugspitze/referenceGenome/mappings/combined_mapping.tsv"
-GENOME_COVERAGE_PYTHON="/home/alex/PycharmProjects/zugspitze/genome_coverage.py"
+GENOME_COVERAGE_BED="referenceGenome/mappings/combined_mapping.tsv"
+GENOME_COVERAGE_PYTHON="genome_coverage.py"
 
 VALID_SPECIES=("Lagopus muta" "Lepus timidus" "Lyrurus tetrix")
 
