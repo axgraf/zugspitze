@@ -95,6 +95,9 @@ class GenomeCoverage:
             "sequenced_bp": int((d["coverage"] * d["length"]).sum()),
             "total_bp": int(d["length"].sum()),
             "breadth_ge_1": int(d.loc[d["coverage"] >= 1, "length"].sum()),
+            "breadth_ge_2": int(d.loc[d["coverage"] >= 2, "length"].sum()),
+            "breadth_ge_5": int(d.loc[d["coverage"] >= 5, "length"].sum()),
+            "breadth_ge_10": int(d.loc[d["coverage"] >= 10, "length"].sum())
         }
 
     @staticmethod
@@ -145,8 +148,7 @@ class GenomeCoverage:
             xaxis_title="Coverage ≥ x",
             yaxis_title="% of Genome",
             xaxis_range=[0, max_x],
-            height=300,
-            width=1200,
+            height=400,
             margin=dict(l=40, r=40, t=40, b=80),
             autosize=True
         )
@@ -164,23 +166,23 @@ class GenomeCoverage:
         fig = px.bar(df_hist, x="Coverage", y="Bases",
                      title="Coverage Distribution",
                      labels={"Coverage": "Coverage (×)", "Bases": "Bases"},
-                     height=300)
-        fig.update_layout(width=1200, margin=dict(l=40, r=40, t=40, b=80), autosize=True)
+                     height=400)
+        fig.update_layout( margin=dict(l=40, r=40, t=40, b=80), autosize=True)
         return fig
 
     @staticmethod
-    def make_breadth_per_region_plot(df):
+    def make_breadth_per_region_plot(df, min_coverage=1):
         regions = []
         breadths = []
 
         for region, sub in df.groupby("region"):
             total = sub["length"].sum()
-            covered = sub.loc[sub["coverage"] >= 1, "length"].sum()
+            covered = sub.loc[sub["coverage"] >= min_coverage, "length"].sum()
             percent = 100 * covered / total if total else 0
             regions.append(region)
             breadths.append(percent)
 
-        data = pd.DataFrame({"Region": regions, "Breadth ≥1× (%)": breadths})
+        data = pd.DataFrame({"Region": regions, f"Breadth ≥{min_coverage}× (%)": breadths})
         sorted_regions = sorted(data["Region"], key=GenomeCoverage.region_sort_key)
 
         data["Region"] = pd.Categorical(data["Region"], categories=sorted_regions, ordered=True)
@@ -189,9 +191,9 @@ class GenomeCoverage:
         fig = px.bar(
             data,
             x="Region",
-            y="Breadth ≥1× (%)",
-            title="Breadth ≥1× Coverage per Region",
-            labels={"Region": "Chromosome / Contig", "Breadth ≥1× (%)": "Breadth ≥1× (%)"},
+            y=f"Breadth ≥{min_coverage}× (%)",
+            title=f"Breadth ≥{min_coverage}× Coverage per Region",
+            labels={"Region": "Chromosome / Contig"},
             height=400
         )
         fig.update_layout(xaxis_tickangle=45, yaxis=dict(range=[0, 100]), margin=dict(l=40, r=40, t=40, b=80), autosize=True)
@@ -330,53 +332,58 @@ class GenomeCoverage:
     def write_summary_block(f, stats, cov_stats, show_seq_output=True):
         f.write("<div class='stat-plot-row'>\n")
 
+        # Block: Coverage-Statistiken
         f.write("<div class='stat-plot'>\n")
         f.write("<div class='stat-block-box'>\n")
         f.write("<table class='stat-table'><caption>Coverage Statistics</caption>\n")
-        f.write("<thead><tr><th class='table-header'>Metric</th><th  class='table-header'>Value</th></tr></thead>\n")
+        f.write("<thead><tr><th class='table-header'>Metric</th><th class='table-header'>Value</th></tr></thead>\n")
         f.write("<tbody>\n")
         for key, val in stats.items():
-            if key in ("sequenced_bp", "total_bp", "breadth_ge_1"):
-                continue  # wird unten ausgegeben
+            if key in ("sequenced_bp", "total_bp", "breadth_ge_1", "breadth_ge_2", "breadth_ge_5", "breadth_ge_10"):
+                continue  # separat ausgegeben
             f.write(f"<tr><td>{key.capitalize()}</td><td>{val:.2f}×</td></tr>\n")
         f.write("</tbody></table>\n")
         f.write(
             "<p class='plot-note'>Statistical overview of how coverage is distributed across all mapped positions.</p>\n")
         f.write("</div></div>\n")
 
+        # Block: Coverage-Gruppen (z.B. 0–5×)
         f.write("<div class='stat-plot'>\n")
         f.write("<div class='stat-block-box'>\n")
-        f.write("<table class='stat-table'><caption>Coverage (bp / %)</caption>\n")
+        f.write("<table class='stat-table'><caption>Coverage Categories (bp / %)</caption>\n")
         f.write("<thead><tr><th class='table-header'>Category</th><th class='table-header'>Value</th></tr></thead>\n")
         f.write("<tbody>\n")
-        # Coverage-Gruppen
         total_length = None
         for label, (count, total) in cov_stats.items():
             if total_length is None:
-                total_length = total  # einmalig übernehmen
+                total_length = total
             percent = 100 * count / total if total else 0
             f.write(f"<tr><td>{label}</td><td>{GenomeCoverage.format_bp(count)} ({percent:.1f}%)</td></tr>\n")
-
-        # Zusatzzeile für Breadth
-        if "breadth_ge_1" in stats and total_length:
-            covered = stats["breadth_ge_1"]
-            percent = 100 * covered / total_length
-            f.write(
-                "<tr><td colspan='2' style='font-style: italic; color: #666;'>Genome regions with at least 1× coverage</td></tr>\n")
-            f.write(
-                f"<tr><td><b>Breadth ≥ 1×</b></td><td><b>{GenomeCoverage.format_bp(covered)} ({percent:.1f}%)</b></td></tr>\n")
-
         f.write("</tbody></table>\n")
-        reference = "to the length of the current region"
-        if show_seq_output:
-            reference = "to the reference genome length"
         f.write(
-            f"<p class='plot-note'>Coverage categories showing how much of the genome is well or poorly covered. "
-            f"Each row shows the number of bases and their percentage relative {reference}.</p>\n")
+            "<p class='plot-note'>How much of the genome is covered at different ranges. Useful to assess how much is poorly covered or not covered at all.</p>\n")
         f.write("</div></div>\n")
 
-        if "sequenced_bp" in stats and "total_bp" in stats and show_seq_output:
-            GenomeCoverage.write_coverage_summary_table(f, stats["sequenced_bp"], stats["total_bp"])
+        # Block: Breadth-Werte separat
+        f.write("<div class='stat-plot'>\n")
+        f.write("<div class='stat-block-box'>\n")
+        f.write("<table class='stat-table'><caption>Breadth of Coverage (bp / %)</caption>\n")
+        f.write(
+            "<thead><tr><th class='table-header'>Threshold</th><th class='table-header'>Covered Bases</th></tr></thead>\n")
+        f.write("<tbody>\n")
+        breadth_keys = [("breadth_ge_1", "1×"), ("breadth_ge_2", "2×"), ("breadth_ge_5", "5×"),
+                        ("breadth_ge_10", "10×")]
+        for key, label in breadth_keys:
+            if key in stats and total_length:
+                covered = stats[key]
+                percent = 100 * covered / total_length
+                f.write(
+                    f"<tr><td>Breadth ≥ {label}</td><td>{GenomeCoverage.format_bp(covered)} ({percent:.1f}%)</td></tr>\n")
+        f.write("</tbody></table>\n")
+        f.write(
+            "<p class='plot-note'>Breadth indicates how much of the genome is covered at or above a given coverage depth. Higher breadth indicates more uniform and complete coverage.</p>\n")
+        f.write("</div></div>\n")
+
         f.write("</div>\n")
 
     def render_html_report(self):
@@ -405,22 +412,81 @@ class GenomeCoverage:
             ### MAPPED READS ####
             f.write("<h3>Mapped Reads</h3>")
             mapped_reads = self.read_counts_per_species.get(self.species, 0)
-            f.write(f"For <b>{self.species}</b>, a total of <b>{mapped_reads:,}</b> primary mapped reads were detected "
-                    f"based on the reference alignment. This includes only reads that are mapped, non-secondary, and non-supplementary.")
+            f.write(f"<p>For <b>{self.species}</b>, a total of <b>{mapped_reads:,}</b> primary mapped reads were detected "
+                    f"based on the reference alignment. This includes only reads that are mapped, non-secondary, and non-supplementary.</p>\n")
+            # Sequencing output summary (verlagert von summary_block)
+            GenomeCoverage.write_coverage_summary_table(f, sequenced_bp=total_stats["sequenced_bp"],
+                                                        total_bp=total_stats["total_bp"])
 
             ### BREATH OF COVERAGE ####
-            fig_breadth = self.make_breadth_per_region_plot(self.df)
-            f.write("<h3>Breadth ≥ 1× Coverage per Region</h3>")
-            f.write(pio.to_html(fig_breadth, include_plotlyjs=True, full_html=False,
+            fig_breadth_1 = self.make_breadth_per_region_plot(self.df, min_coverage=1)
+            fig_breadth_2 = self.make_breadth_per_region_plot(self.df, min_coverage=2)
+            fig_breadth_5 = self.make_breadth_per_region_plot(self.df, min_coverage=5)
+            fig_breadth_10 = self.make_breadth_per_region_plot(self.df, min_coverage=10)
+
+            f.write("<h3>Breadth of Coverage per Region</h3>\n")
+            f.write("<div>\n")
+            f.write("<div class='tab-buttons'>\n")
+            f.write("<button onclick='showBreadthTab(\"1\")'>≥1×</button>\n")
+            f.write("<button onclick='showBreadthTab(\"2\")'>≥2×</button>\n")
+            f.write("<button onclick='showBreadthTab(\"5\")'>≥5×</button>\n")
+            f.write("<button onclick='showBreadthTab(\"10\")'>≥10×</button>\n")
+            f.write("</div>\n")
+
+            # Tab: ≥1×
+            f.write("<div class='plot-tab' id='breadth-tab-1' style=' height:400px; display: block;'>\n")
+            f.write(pio.to_html(fig_breadth_1, include_plotlyjs=True, full_html=False,
                                 config={'responsive': True, 'scrollZoom': True}))
+            f.write("</div>\n")
+
+            # Tab: ≥2×
+            f.write("<div class='plot-tab' id='breadth-tab-2' style=' height:400px; display: none;'>\n")
+            f.write(pio.to_html(fig_breadth_2, include_plotlyjs=False, full_html=False,
+                                config={'responsive': True, 'scrollZoom': True}))
+            f.write("</div>\n")
+
+            # Tab: ≥5×
+            f.write("<div class='plot-tab' id='breadth-tab-5' style=' height:400px; display: none;'>\n")
+            f.write(pio.to_html(fig_breadth_5, include_plotlyjs=False, full_html=False,
+                                config={'responsive': True, 'scrollZoom': True}))
+            f.write("</div>\n")
+
+            # Tab: ≥10×
+            f.write("<div class='plot-tab' id='breadth-tab-10' style=' height:400px; display: none;'>\n")
+            f.write(pio.to_html(fig_breadth_10, include_plotlyjs=False, full_html=False,
+                                config={'responsive': True, 'scrollZoom': True}))
+            f.write("</div>\n")
+
             f.write(
                 "<p class='plot-note'>This plot shows the percentage of each region that is covered by at least one read. "
                 "Regions with high breadth are likely to be informative for downstream analyses such as (reference-guided) assembly or alignment-based profiling.<br>"
                 "<i>The breadth of coverage refers to the percentage of genome bases sequenced at or above a given sequencing depth.</i></p>")
 
+            # JavaScript zum Umschalten
+            f.write("""
+            <script>
+            function showBreadthTab(thresh) {
+              ['1', '2', '5', '10'].forEach(t => {
+                const tab = document.getElementById('breadth-tab-' + t);
+                if (tab) {
+                  const visible = (t === thresh);
+                  tab.style.display = visible ? 'block' : 'none';
+                  if (visible) {
+                    // Verzögertes Resize für Layout-Stabilität
+                    setTimeout(() => {
+                      tab.querySelectorAll('.js-plotly-plot').forEach(plot => Plotly.Plots.resize(plot));
+                    }, 100);
+                  }
+                }
+              });
+            }
+            </script>
+            """)
+
+
             ### COVERAGE DISTRIBUTION ####
             f.write("<h3>Coverage distribution</h3>\n")
-            f.write("<div class='stat-plot'>\n")
+            f.write("<div>\n")
             f.write("<div class='tab-buttons'>\n")
             f.write("<button  onclick='showTab(\"cum\")'>Cumulative</button>\n")
             f.write("<button  onclick='showTab(\"hist\")'>Histogram</button>\n")
@@ -527,9 +593,18 @@ class GenomeCoverage:
                         }}
                     }}
                     function showTab(tabName) {{
-                      document.getElementById("plot-hist").style.display = tabName === "hist" ? "block" : "none";
-                      document.getElementById("plot-cum").style.display = tabName === "cum" ? "block" : "none";
-                      Plotly.Plots.resize(document.querySelector(`#plot-${{tabName}} .js-plotly-plot`));
+                      ['hist', 'cum'].forEach(name => {{
+                        const el = document.getElementById(`plot-${{name}}`);
+                        if (el) {{
+                          const visible = (name === tabName);
+                          el.style.display = visible ? 'block' : 'none';
+                          if (visible) {{
+                            setTimeout(() => {{
+                              el.querySelectorAll('.js-plotly-plot').forEach(p => Plotly.Plots.resize(p));
+                            }}, 100);
+                          }}
+                        }}
+                      }});
                     }}
                     function prevPage() {{ if (currentPage > 0) showPage(currentPage - 1); }}
                     function nextPage() {{ if (currentPage < totalPages - 1) showPage(currentPage + 1); }}
@@ -611,8 +686,8 @@ class GenomeCoverage:
 
            .tab-buttons { margin-bottom: 10px; }
            
-           .plot-tab { width: 100%; }
-           .plot-tab .js-plotly-plot { width: 100% !important; height: 300px !important; }
+           .plot-tab { width: 100%;  min-height: 320px; }
+           .plot-tab .js-plotly-plot { width: 100% !important; height: 400px !important; }
            .plot-note {
                 font-size: 13px;
                 color: #555;
