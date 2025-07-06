@@ -1,8 +1,5 @@
 # Zugspitze - Metagenomik-Projekt 🧬❄️  
-*Erstellt von Alexander Graf · Letzte Aktualisierung: 05. Juli 2025*  
-*Lesedauer: ca. 5 Minuten*
 
----
 
 ## 🧪 Projektüberblick
 
@@ -211,6 +208,9 @@ nextflow run epi2me-labs/wf-metagenomics \
 - ``--keep_bam``  
   Behalte die ausgerichteten BAM-Dateien (notwendig für Coverage-Analyse)
 
+Das folgende Beispiel zeigt einen **einfachen manuellen Aufruf** mit Nextflow.  
+▶️ **Vollautomatisierte Ausführung siehe hier:** [🧪 Automatisierte Analyse mit Minimap2](#-automatisierte-analyse-mit-minimap2)
+
 ---
 
 ## 🧪 Automatisierte Analyse mit Minimap2
@@ -349,3 +349,21 @@ Es ruft den Nextflow-Workflow mit den im Skript definierten Datenbank- und Taxon
   TAXONOMY="referenceGenome/kraken2_db/taxonomy/"
   ```
   
+---
+
+## 📂 Beispielausgaben
+
+Im Ordner [`examples/`](./examples/) befinden sich exemplarische HTML-Berichte, die im Rahmen dieses Projekts erzeugt wurden. Sie zeigen typische Resultate nach erfolgreicher Ausführung der jeweiligen Workflows und Analyse-Skripte.
+
+### 🔬 Minimap2-Workflow
+
+| Dateiname | Beschreibung |
+|----------|--------------|
+| [`wf-metagenomics-report_minimap2.html`](./examples/wf-metagenomics-report_minimap2.html) | Ergebnisübersicht des EPI2ME-Workflows mit Minimap2 (klassifiziert gegen eigene Referenzgenome) |
+| [`coverage_report_Lagopus_muta_10kb.html`](./examples/coverage_report_Lagopus_muta_10kb.html) | Detaillierter Coverage-Report für *Lagopus muta* mit 10 kb Binning, generiert durch `genome_coverage.py` |
+
+### 🌍 Kraken2-Workflow
+
+| Dateiname | Beschreibung |
+|----------|--------------|
+| [`wf-metagenomics-report_kraken2.html`](./examples/wf-metagenomics-report_kraken2.html) | Ergebnisübersicht des EPI2ME-Workflows mit Kraken2-Datenbank (breite Klassifikation über viele Taxa) |
