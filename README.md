@@ -152,20 +152,12 @@ To generate coverage plots, each reference sequence (FASTA header) must be linke
 NC_064433.1    Lagopus muta    chromosome_1
 ```
 
+A ready-to-use script is available at [`scripts/generate_mapping.sh`](./scripts/generate_mapping.sh).  
+It processes all three reference genomes and produces the final mapping file at:
 
-This file is generated using a shell script. Create the script `generate_mapping.sh` in the `referenceGenome/` directory.
 
-### Example content for `generate_mapping.sh`
-
-```bash
-#!/bin/bash
-mkdir -p mappings
-
-zgrep "^>" Lepus_timidus/*.fna.gz | cut -d' ' -f1 | sed 's/^>//' | awk -F'.' '{print $0 "\tLepus timidus\t"$1}' > mappings/lepus.tsv
-zgrep "^>" Lagopus_muta/*.fna.gz | cut -d' ' -f1 | sed 's/^>//' | awk -F'.' '{print $0 "\tLagopus muta\t"$1}' > mappings/lagopus.tsv
-zgrep "^>" Lyrurus_tetrix/*.fna.gz | cut -d' ' -f1 | sed 's/^>//' | awk -F'.' '{print $0 "\tLyrurus tetrix\t"$1}' > mappings/lyrurus.tsv
-
-cat mappings/lepus.tsv mappings/lagopus.tsv mappings/lyrurus.tsv > mappings/combined_mapping.tsv
+```text
+referenceGenome/mappings/combined_mapping.tsv
 ```
 
 ### Running the Script
@@ -177,14 +169,14 @@ cd referenceGenome
 chmod +x generate_mapping.sh
 ./generate_mapping.sh
 ```
+This file is required as --mapping input for genome_coverage.py.
 
 ## 🚀 EPI2ME Workflow with Minimap2
 
 Once all reference files (genome, index, taxonomy, `ref2taxid`, mapping) have been prepared, the metagenomics analysis with Minimap2 can be started.
 
 > ⚠️ Note:  
-> The Minimap2 workflow can **only detect species** whose genomes were downloaded and indexed beforehand in  
-> [🧬 Reference Genome Preparation](#-reference-genomes).  
+> The Minimap2 workflow can **only detect species** whose genomes were downloaded and indexed beforehand in [🧬 Reference Genome Preparation](#-reference-genomes).  
 > In this project, these are:
 > - *Lagopus muta* (rock ptarmigan)
 > - *Lepus timidus* (mountain hare)
@@ -407,7 +399,7 @@ They are based on files in the [`examples/`](./examples/) folder and offer a qui
 
 ![Minimap2 Report](./images/epi2me_metagenomics_minimap2.png)
 
-**Coverage report for *Lagopus muta*** (`genome_coverage.py` with 10 kb binning):
+**Coverage report for *Lagopus muta*** (`genome_coverage.py` with 10kb binning):
 
 ![Coverage Lagopus](./images/coverage_analyis_lagopus_example.png)
 
