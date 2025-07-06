@@ -1,60 +1,71 @@
-# Zugspitze - Metagenomik-Projekt 🧬❄️  
+# Zugspitze - Metagenomics Project 🧬❄️
 
+## 🧪 Project Overview
 
-## 🧪 Projektüberblick
+This project provides a complete analysis pipeline for metagenomic ONT data collected as part of environmental and wildlife monitoring in the Zugspitze region.
 
-Dieses Projekt stellt eine vollständige Analysepipeline für metagenomische ONT-Daten bereit, die im Rahmen von Umwelt- und Wildtiermonitoring rund um die Zugspitze erhoben wurden.
+The goal is to use the `epi2me-labs/wf-metagenomics` workflow to specifically detect and quantify the presence of species such as the **rock ptarmigan (*Lagopus muta*)**, **black grouse (*Lyrurus tetrix*)**, or **mountain hare (*Lepus timidus*)**.
 
-Ziel ist es, mit Hilfe des `epi2me-labs/wf-metagenomics`-Workflows gezielt das Vorkommen einzelner Spezies wie dem **Schneehuhn (*Lagopus muta*)**, dem **Birkhuhn (*Lyrurus tetrix*)** oder dem **Schneehasen (*Lepus timidus*)** nachzuweisen und zu quantifizieren.
+Depending on the objective, two workflow options are available:
 
-Je nach Fragestellung stehen zwei Analysepfade zur Verfügung:
+- **Minimap2 Workflow**  
+  Targeted species identification using custom reference genomes. Enables alignment-based classification and detailed coverage analysis.
 
-- **Minimap2-Workflow**:  
-  Speziesspezifische Analyse mit eigenen Referenzgenomen. Ermöglicht gezielte Identifikation und Coverage-Analyse einzelner Zielorganismen.
+- **Kraken2 Workflow**  
+  Broad taxonomic classification against a comprehensive prebuilt database (e.g., PlusPFP-16), suitable for identifying **bacteria, viruses, fungi, protozoa, plants**, and **vertebrates**.
 
-- **Kraken2-Workflow**:  
-  Breite taxonomische Klassifikation gegen eine umfassende Referenzdatenbank (z. B. PlusPFP-16), insbesondere für **Bakterien, Viren, Pilze, Protozoen, Pflanzen** und **Wirbeltiere** geeignet.
+For deeper quality control, a dedicated Python script `genome_coverage.py` is available (Minimap2 only), which generates interactive HTML reports with:
 
-Zur vertieften Qualitätskontrolle steht ein **eigenes Python-Skript `genome_coverage.py`** zur Verfügung, das ausschließlich im Zusammenhang mit dem **Minimap2-Workflow** verwendet werden kann.  
-Es erzeugt interaktive HTML-Berichte mit:
-
-- detaillierten **Coverage-Statistiken**
-- interaktiven **Chromosomenplots und Heatmaps**
-- Navigation durch Regionen und visuelle Bewertung der Abdeckung
-
-Die Analysepipeline eignet sich sowohl für gezielte Artensuche als auch für explorative metagenomische Studien in komplexen Umweltproben.
+- detailed **coverage statistics**
+- interactive **chromosomal plots and heatmaps**
+- region-wise navigation and visual quality assessment
 
 ---
 
-## 📄 Dokumentation
+## 📄 Documentation
 
-Die folgenden Links verweisen auf die offiziellen **EPI2ME-Workflows** von Oxford Nanopore Technologies, auf denen dieses Projekt basiert:
+Based on the official **EPI2ME workflows** by Oxford Nanopore:
 
-- Workflow-Dokumentation:  
-  [https://epi2me.nanoporetech.com/epi2me-docs/workflows/wf-metagenomics/](https://epi2me.nanoporetech.com/epi2me-docs/workflows/wf-metagenomics/)
-
-- Anleitung zur Nutzung eigener Referenzdatenbanken:  
-  [https://epi2me.nanoporetech.com/how-to-meta-offline/](https://epi2me.nanoporetech.com/how-to-meta-offline/)
+- [Workflow documentation](https://epi2me.nanoporetech.com/epi2me-docs/workflows/wf-metagenomics/)
+- [Using custom reference genomes](https://epi2me.nanoporetech.com/how-to-meta-offline/)
 
 ---
 
-## 🧬 Referenzgenome
+## 🧬 Reference Genomes
 
-| Organismus | Taxonomy ID | Assembly | Level |
-|-----------|-------------|----------|-------|
-| *Lepus timidus* (Schneehase) | 62621 | [GCA_040893245.2](https://www.ncbi.nlm.nih.gov/datasets/genome/GCA_040893245.2/) | Chromosome |
-| *Lyrurus tetrix* (Birkhuhn) | 1233216 | [GCA_043882375.1](https://www.ncbi.nlm.nih.gov/datasets/genome/GCA_043882375.1/) | Scaffold |
-| *Lagopus muta* (Schneehuhn) | 64668 | [GCF_023343835.1](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_023343835.1/) | Chromosome |
+| Organism                       | Taxonomy ID | Assembly | Level      |
+|--------------------------------|-------------|----------|------------|
+| *Lepus timidus* (mountain hare) | 62621       | [GCA_040893245.2](https://www.ncbi.nlm.nih.gov/datasets/genome/GCA_040893245.2/) | Chromosome |
+| *Lyrurus tetrix* (black grouse) | 1233216     | [GCA_043882375.1](https://www.ncbi.nlm.nih.gov/datasets/genome/GCA_043882375.1/) | Scaffold   |
+| *Lagopus muta* (rock ptarmigan) | 64668       | [GCF_023343835.1](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_023343835.1/) | Chromosome |
 
-> ⚠️ **Hinweis:** Die Referenzgenomen sollten regelmäßig auf Updates geprüft werden.  
-> Besonders beim Birkhuhn (*Lyrurus tetrix*) liegt derzeit nur ein Scaffold-Level-Assembly vor – d. h. es sind noch keine vollständigen Chromosomen, sondern nur Contigs verfügbar.
+> ⚠️ **Note:** Reference genomes should be regularly checked for updates.  
+> *Lyrurus tetrix* is currently only available at scaffold level (contigs only).
+
+---
+
+## 📦 Dependencies
+
+| Tool / Package | Purpose |
+|----------------|---------|
+| `nextflow`     | Workflow execution |
+| `docker`       | Runs EPI2ME containers |
+| `kraken2`      | Broad taxonomic classification |
+| `minimap2`     | Reference alignment (Minimap2 workflow) |
+| `mosdepth`     | Coverage calculation per BAM file |
+| `pysam`        | BAM processing in Python |
+| `pandas`       | Data analysis |
+| `plotly`       | Interactive charting |
+| `seqkit`       | FASTA/FASTQ manipulation (optional) |
+
+> Most tools are installed in the Conda environment `zugspitze_metagenome`.
 
 ---
 
 ## ⚙️ Installation
 
 ```bash
-# Conda Umgebung erstellen
+# Create Conda environment
 mamba create -n zugspitze_metagenome \
   -c conda-forge -c bioconda \
   nextflow seqkit kraken2 pysam pandas plotly mosdepth \
@@ -62,51 +73,51 @@ mamba create -n zugspitze_metagenome \
 
 mamba activate zugspitze_metagenome
 
-# Docker installieren und aktivieren
+# Install and enable Docker
 sudo apt install docker.io
 sudo systemctl enable --now docker
 sudo usermod -aG docker $USER
-newgrp docker  # damit Gruppenänderung sofort wirksam wird
+newgrp docker  # ensures group change takes effect without logout/login
 
-# Testlauf zur Installation des Workflows
+# Test the EPI2ME workflow installation
 nextflow run epi2me-labs/wf-metagenomics --help
 ```
 ---
 
-## 🧬 Vorbereitung der Referenzgenome
+## 🧬 Preparation of Reference Genomes
 
-> ⚠️ Dieser Schritt ist **nur für den Minimap2-Workflow** erforderlich.  
-> Beim [Kraken2-Workflow](#-kraken2-datenbank-setup) werden vorgefertigte Datenbanken verwendet (siehe entsprechender Abschnitt).
+> ⚠️ This step is **only required for the Minimap2 workflow**.  
+> For the Kraken2 workflow, prebuilt databases are used (see [📦 Kraken2 Database Setup](#-kraken2-database-setup)).
 
-
-Lade die Referenzgenomen für Schneehuhn (*Lagopus muta*), Birkhuhn (*Lyrurus tetrix*) und Schneehase (*Lepus timidus*) herunter und erstelle eine kombinierte FASTA-Datei sowie einen Minimap2-Index.
+Download the reference genomes for rock ptarmigan (*Lagopus muta*), black grouse (*Lyrurus tetrix*), and mountain hare (*Lepus timidus*), merge them, and create a Minimap2 index:
 
 ```bash
 mkdir -p referenceGenome/{Lepus_timidus,Lagopus_muta,Lyrurus_tetrix,combined_genomes,taxdump}
 
-# Genomdateien herunterladen
+# Download genomes
 wget -P referenceGenome/Lepus_timidus https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/040/893/245/GCA_040893245.2_mLepTim1.1_pri/GCA_040893245.2_mLepTim1.1_pri_genomic.fna.gz
 wget -P referenceGenome/Lagopus_muta https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/023/343/835/GCF_023343835.1_bLagMut1_primary/GCF_023343835.1_bLagMut1_primary_genomic.fna.gz
 wget -P referenceGenome/Lyrurus_tetrix https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/043/882/375/GCA_043882375.1_ASM4388237v1/GCA_043882375.1_ASM4388237v1_genomic.fna.gz
 
-# FASTA-Dateien zusammenführen
+# Merge genomes
 cat referenceGenome/Lepus_timidus/*.gz \
     referenceGenome/Lagopus_muta/*.gz \
     referenceGenome/Lyrurus_tetrix/*.gz \
     > referenceGenome/combined_genomes/LeTim_LagMut_LyrTet.genome.fasta.gz
 
-# Minimap2-Index erzeugen
-minimap2 -t 8 -x map-ont -d referenceGenome/combined_genomes/LeTim_LagMut_LyrTet.genome.mmi referenceGenome/combined_genomes/LeTim_LagMut_LyrTet.genome.fasta.gz
+# Create Minimap2 index
+minimap2 -t 8 -x map-ont -d referenceGenome/combined_genomes/LeTim_LagMut_LyrTet.genome.mmi \
+    referenceGenome/combined_genomes/LeTim_LagMut_LyrTet.genome.fasta.gz
 
-# Taxonomie-Datenbank herunterladen
+# Download NCBI taxonomy
 wget -P referenceGenome/taxdump https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/new_taxdump/new_taxdump.tar.gz
 ```
 
 ---
 
-## 📄 ref2taxid-Datei erzeugen
+## 📄 Create `ref2taxid` File
 
-Für die Klassifizierung mit Minimap2 benötigt der Workflow eine Datei, die jede FASTA-Sequenz einem Taxonomie-Identifier zuordnet. Diese Datei wird manuell erzeugt:
+The `ref2taxid` file links each FASTA sequence header to its NCBI taxonomy ID and is required for Minimap2-based classification.
 
 ```bash
 cd referenceGenome/combined_genomes
@@ -120,26 +131,31 @@ zgrep "^>" ../Lagopus_muta/*.fna.gz | cut -d' ' -f1 | sed 's/^>//' | awk '{print
 # Lyrurus tetrix (TaxID: 1233216)
 zgrep "^>" ../Lyrurus_tetrix/*.fna.gz | cut -d' ' -f1 | sed 's/^>//' | awk '{print $0 "\t1233216"}' > lyrurus.tsv
 
-# Alle Einträge zusammenführen
+# Combine all entries
 cat lepus.tsv lagopus.tsv lyrurus.tsv > ref2taxid.targloci.tsv
 ```
 
 ---
 
-## 🧭 Mapping-Datei für die Coverage-Analyse
+## 🧭 Mapping File for Coverage Analysis
 
-> 🐍 Diese Datei wird ausschließlich für das Python-Skript [`genome_coverage.py`](./genome_coverage.py) benötigt,  
-> das eine vertiefte Coverage-Analyse und Visualisierung einzelner Spezies ermöglicht.
+> 🐍 This file is required only for use with the Python script [`genome_coverage.py`](./genome_coverage.py),  
+> which generates interactive HTML coverage reports for each species based on BAM and BED input.
+
+To generate coverage plots, each reference sequence (FASTA header) must be linked to:
+- the corresponding species name (e.g., *Lagopus muta*)
+- a region label (e.g., chromosome or contig name)
+
+### Example line
+
+```text
+NC_064433.1    Lagopus muta    chromosome_1
+```
 
 
-Für die spätere Coverage-Visualisierung wird eine Mapping-Datei benötigt, die jede FASTA-Sequenz einem der referenzierten Organismen und einem benannten Chromosomen- oder Contignamen zuordnet.
+This file is generated using a shell script. Create the script `generate_mapping.sh` in the `referenceGenome/` directory.
 
-**Beispielzeile:**  
-`NC_064433.1    Lagopus muta    chromosome_1`
-
-Diese Datei wird über ein Shell-Skript erzeugt. Lege dazu das Skript `generate_mapping.sh` im Verzeichnis `referenceGenome/` an.
-
-### Beispielinhalt für `generate_mapping.sh`
+### Example content for `generate_mapping.sh`
 
 ```bash
 #!/bin/bash
@@ -152,9 +168,9 @@ zgrep "^>" Lyrurus_tetrix/*.fna.gz | cut -d' ' -f1 | sed 's/^>//' | awk -F'.' '{
 cat mappings/lepus.tsv mappings/lagopus.tsv mappings/lyrurus.tsv > mappings/combined_mapping.tsv
 ```
 
-### Ausführung des Skripts
+### Running the Script
 
-Führe das Mapping-Skript im Verzeichnis `referenceGenome` aus:
+Execute the mapping script from within the `referenceGenome` directory:
 
 ```bash
 cd referenceGenome
@@ -162,17 +178,20 @@ chmod +x generate_mapping.sh
 ./generate_mapping.sh
 ```
 
-## 🚀 Metagenome-Workflow von Epi2me mit Minimap2
+## 🚀 EPI2ME Workflow with Minimap2
 
-Sobald alle Referenzdateien (Genom, Index, Taxonomie, `ref2taxid`, Mapping) vorbereitet sind, kann die Metagenomanalyse mit Minimap2 gestartet werden.
+Once all reference files (genome, index, taxonomy, `ref2taxid`, mapping) have been prepared, the metagenomics analysis with Minimap2 can be started.
 
-> ⚠️ Hinweis:  
-> Mit dem Minimap2-Workflow können **nur genau die Spezies erkannt werden**, deren Genome zuvor im Schritt  
-> [🧬 Vorbereitung der Referenzgenome](#-vorbereitung-der-referenzgenome) heruntergeladen und eingebunden wurden.  
-> In diesem Projekt sind das:
-> - *Lagopus muta* (Schneehuhn)
-> - *Lepus timidus* (Schneehase)
-> - *Lyrurus tetrix* (Birkhuhn)
+> ⚠️ Note:  
+> The Minimap2 workflow can **only detect species** whose genomes were downloaded and indexed beforehand in  
+> [🧬 Reference Genome Preparation](#-reference-genomes).  
+> In this project, these are:
+> - *Lagopus muta* (rock ptarmigan)
+> - *Lepus timidus* (mountain hare)
+> - *Lyrurus tetrix* (black grouse)
+
+The following is a **basic manual execution example** using Nextflow.  
+▶️ **For a fully automated version, see:** [🧪 Automated Analysis with Minimap2](#-automated-analysis-with-minimap2)
 
 ```bash
 nextflow run epi2me-labs/wf-metagenomics \
@@ -185,46 +204,42 @@ nextflow run epi2me-labs/wf-metagenomics \
   --keep_bam
 ```
 
-### Parameterbeschreibung
+### Parameter Description
 
-- ``--fastq``  
-  Pfad zum Verzeichnis mit den demultiplexierten ONT-Reads, z.B. `fastq_pass/`
+- `--fastq`  
+  Path to the directory containing demultiplexed ONT reads, e.g., `fastq_pass/`
 
-- ``--classifier minimap2``  
-  Nutzt Minimap2 als Klassifikator (statt z.B. Kraken2)
+- `--classifier minimap2`  
+  Specifies Minimap2 as the classifier (instead of, e.g., Kraken2)
 
-- ``--reference``  
-  Minimap2-Indexdatei (`.mmi`) der kombinierten Genome
+- `--reference`  
+  Minimap2 index file (`.mmi`) of the combined reference genomes
 
-- ``--ref2taxid``  
-  TSV-Datei, die jede Sequenz-ID (z.B. `NC_...`) einer NCBI Taxonomy-ID zuordnet
+- `--ref2taxid`  
+  TSV file mapping each sequence ID (e.g., `NC_...`) to an NCBI Taxonomy ID
 
-- ``--taxonomy``  
-  Komprimiertes Taxonomie-Archiv (`new_taxdump.tar.gz`) von NCBI
+- `--taxonomy`  
+  Compressed taxonomy archive (`new_taxdump.tar.gz`) from NCBI
 
-- ``--out_dir``  
-  Zielordner für alle Ausgabedateien (Berichte, Klassifikation, BAMs)
+- `--out_dir`  
+  Output directory for all results (reports, classifications, BAM files)
 
-- ``--keep_bam``  
-  Behalte die ausgerichteten BAM-Dateien (notwendig für Coverage-Analyse)
-
-Das folgende Beispiel zeigt einen **einfachen manuellen Aufruf** mit Nextflow.  
-▶️ **Vollautomatisierte Ausführung siehe hier:** [🧪 Automatisierte Analyse mit Minimap2](#-automatisierte-analyse-mit-minimap2)
+- `--keep_bam`  
+  Keeps the aligned BAM files (required for downstream coverage analysis)
 
 ---
 
-## 🧪 Automatisierte Analyse mit Minimap2
+## 🧪 Automated Analysis with Minimap2
 
-Für die vollständige automatisierte Durchführung des Metagenomik-Workflows inklusive Coverage-Analyse kann 
-das Bash-Skript [`run_metagenome_minimap2.sh`](./scripts/run_metagenome_minimap2.sh) verwendet werden.
+For a fully automated execution of the Minimap2-based metagenomics workflow including coverage analysis, use the Bash script [`run_metagenome_minimap2.sh`](./scripts/run_metagenome_minimap2.sh).
 
-### Aufruf:
+### Usage
 
 ```bash
 ./run_metagenome_minimap2.sh <FASTQ_INPUT_FOLDER> <OUTPUT_DIR> <SPECIES> [BIN_SIZE]
 ```
 
-### Beispiel
+### Example
 
 ```bash
 ./run_metagenome_minimap2.sh \
@@ -234,52 +249,53 @@ das Bash-Skript [`run_metagenome_minimap2.sh`](./scripts/run_metagenome_minimap2
   1000
 ```
 
-### Argumente
+### Arguments
 
 - `FASTQ_INPUT_FOLDER`  
-  Pfad zum Ordner mit ONT-Fastq-Dateien, typischerweise der `fastq_pass/`-Ordner eines ONT-Runs.
+  Path to the folder containing ONT FASTQ files, typically the `fastq_pass/` directory of a sequencing run.
 
 - `OUTPUT_DIR`  
-  Name oder Pfad des Ausgabeordners, in dem die Ergebnisse gespeichert werden.
+  Name or path of the output directory where all results will be stored.
 
 - `SPECIES`  
-  **Erforderlich.** Eine der folgenden Spezies (exakt in Anführungszeichen angeben):  
+  **Required.** One of the following species (must be provided in quotes):  
   - `"Lagopus muta"`  
   - `"Lepus timidus"`  
   - `"Lyrurus tetrix"`
 
 - `BIN_SIZE` *(optional)*  
-  Auflösung der Coverage-Binning-Fenster in Basen (z. B. `1000` für 1 kb).  
-  Wird kein Wert angegeben, wird `1000` als Standard verwendet.
-
+  Bin size (in base pairs) used for coverage calculation (e.g., `1000` for 1kb).  
+  If not specified, the default is `1000`.
+- 
 ---
 
-## 📦 Kraken2-Datenbank-Setup
+## 📦 Kraken2 Database Setup
 
-Für die Analyse mit Kraken2 wird eine vorgefertigte Klassifikationsdatenbank benötigt. Die offiziellen Kraken2-Datenbanken sind vorkonfiguriert und können direkt verwendet werden.
+For Kraken2-based analysis, a prebuilt classification database is required.  
+The official Kraken2 databases are ready-to-use and can be downloaded directly.
 
-> 🔗 Quelle: [https://benlangmead.github.io/aws-indexes/k2](https://benlangmead.github.io/aws-indexes/k2)
+> 🔗 Source: [https://benlangmead.github.io/aws-indexes/k2](https://benlangmead.github.io/aws-indexes/k2)
 
-### Auswahl der passenden Datenbankgröße
+### Choosing the Appropriate Database Size
 
-Die Wahl der Datenbank hängt vom verfügbaren Arbeitsspeicher ab:
+The choice depends on the available system memory:
 
 - **PlusPFP-16** (`~14.9GB`)  
-  Empfohlen bei ≥16–32GB RAM  
-  Enthält:
-  - RefSeq Archaea, Bacteria, Viruses, Plasmids
-  - Human, UniVec_Core
-  - **zusätzlich**: RefSeq Protozoa, Pilze (Fungi), Pflanzen (Plants)
+  Recommended for ≥16–32GB RAM  
+  Includes:  
+  - RefSeq Archaea, Bacteria, Viruses, Plasmids  
+  - Human, UniVec_Core  
+  - **Plus**: RefSeq Protozoa, Fungi, and Plants
 
 - **PlusPFP-8** (`~7.5GB`)  
-  Empfohlen bei 8GB RAM  
-  Gleicher Aufbau wie PlusPFP-16, aber reduzierter Umfang
+  Recommended for systems with 8GB RAM  
+  Same structure as PlusPFP-16, but reduced in size
 
-> 💻 *Hinweis:* Auf einem Laptop mit 32GB RAM wurde im Projekt `PlusPFP-16` erfolgreich verwendet.
+> 💻 *Note:* In this project, `PlusPFP-16` was successfully used on a laptop with 32GB RAM.
 
 ---
 
-### Download von PlusPFP-16
+### Download of PlusPFP-16
 
 ```bash
 mkdir -p referenceGenome/kraken2_db/k2_pluspf_16gb
@@ -291,11 +307,14 @@ tar -xf k2_pluspf_16gb_20250402.tar.gz
 
 ---
 
-## 🚀 Analyse mit Kraken2
+## 🚀 Kraken2-Based Analysis
 
-Nach dem Setup der Kraken2-Datenbank und des NCBI-Taxonomiearchivs kann der Workflow mit Kraken2 als Klassifikator gestartet werden.
+Once the Kraken2 database and the NCBI taxonomy archive have been set up, the workflow can be executed with Kraken2 as the classifier.
 
-### Beispiel: Manuelle Ausführung
+### Example: Manual Execution
+
+The following example shows a **basic manual run** using Nextflow.  
+▶️ **For a fully automated version, see:** [🧪 Automated Workflow with Kraken2](#-automated-workflow-with-kraken2)
 
 ```bash
 nextflow run epi2me-labs/wf-metagenomics \
@@ -305,65 +324,97 @@ nextflow run epi2me-labs/wf-metagenomics \
   --out_dir zugspitze_kraken2
 ```
 
-### Parameterbeschreibung
+### Parameter Description
 
 - `--fastq`  
-  Pfad zum Verzeichnis mit den demultiplexierten ONT-Fastq-Dateien (z.B. `fastq_pass/`)
+  Path to the directory containing demultiplexed ONT FASTQ files (e.g., `fastq_pass/`)
 
 - `--database`  
-  Pfad zur entpackten Kraken2-Datenbank (z.B. `referenceGenome/kraken2_db/k2_pluspf_16gb/`)
+  Path to the unpacked Kraken2 database (e.g., `referenceGenome/kraken2_db/k2_pluspf_16gb/`)
 
 - `--taxonomy`  
-  Pfad zum Verzeichnis mit den entpackten NCBI-Taxonomiedaten (aus `new_taxdump.tar.gz`)
+  Path to the directory containing the unpacked NCBI taxonomy files (from `new_taxdump.tar.gz`)
 
 - `--out_dir`  
-  Zielordner für die Analyseergebnisse (z.B. `zugspitze_kraken2`)
+  Output directory where the analysis results will be stored (e.g., `zugspitze_kraken2`)
 
 ---
 
-## 🧪 Automatisierter Workflow mit Kraken2
+## 🧪 Automated Workflow with Kraken2
 
-Für eine automatisierte Analyse mit Kraken2 kann das Skript [`run_metagenome_kraken2.sh`](./scripts/run_metagenome_kraken2.sh) verwendet werden.  
-Es ruft den Nextflow-Workflow mit den im Skript definierten Datenbank- und Taxonomie-Pfaden auf.
+To automate the Kraken2-based analysis, use the script [`run_metagenome_kraken2.sh`](./scripts/run_metagenome_kraken2.sh).  
+This script invokes the Nextflow workflow with predefined paths to the Kraken2 database and taxonomy archive.
 
-### Aufruf
+### Usage
 
 ```bash
 ./run_metagenome_kraken2.sh <FASTQ_INPUT_FOLDER> <OUTPUT_DIR>
 ```
 
-### Argumente
+### Arguments
 
 - `FASTQ_INPUT_FOLDER`  
-  Pfad zum Ordner mit ONT-Fastq-Dateien, typischerweise `fastq_pass/`
+  Path to the directory containing ONT FASTQ files, typically `fastq_pass/`
 
 - `OUTPUT_DIR`  
-  Verzeichnis, in dem die Ergebnisse gespeichert werden (wird bei Bedarf automatisch angelegt)
+  Directory where the results will be saved (created if it doesn't exist)
 
-### Hinweise
+### Notes
 
-- Die im Skript verwendeten Pfade zur Kraken2-Datenbank und zur Taxonomie müssen existieren und korrekt gesetzt sein:
+- The script uses predefined paths for the Kraken2 database and taxonomy archive. Make sure they exist and are correctly set:
 
-  ```bash
-  KRAKEN2_DB="referenceGenome/kraken2_db/k2_pluspf_16gb/"
-  TAXONOMY="referenceGenome/kraken2_db/taxonomy/"
+```bash
+KRAKEN2_DB="referenceGenome/kraken2_db/k2_pluspf_16gb/"
+TAXONOMY="referenceGenome/kraken2_db/taxonomy/"
   ```
   
 ---
 
-## 📂 Beispielausgaben
+## 📂 Example Outputs
 
-Im Ordner [`examples/`](./examples/) befinden sich exemplarische HTML-Berichte, die im Rahmen dieses Projekts erzeugt wurden. Sie zeigen typische Resultate nach erfolgreicher Ausführung der jeweiligen Workflows und Analyse-Skripte.
+The [`examples/`](./examples/) folder contains sample HTML reports generated as part of this project.  
+They demonstrate typical output from each workflow and the analysis scripts.
 
-### 🔬 Minimap2-Workflow
+> ⚠️ **Note:**  
+> GitHub does not render `.html` files directly in the browser.  
+> To view the interactive reports properly, download the file and open it locally in your browser.
 
-| Dateiname | Beschreibung |
-|----------|--------------|
-| [`wf-metagenomics-report_minimap2.html`](./examples/wf-metagenomics-report_minimap2.html) | Ergebnisübersicht des EPI2ME-Workflows mit Minimap2 (klassifiziert gegen eigene Referenzgenome) |
-| [`coverage_report_Lagopus_muta_10kb.html`](./examples/coverage_report_Lagopus_muta_10kb.html) | Detaillierter Coverage-Report für *Lagopus muta* mit 10 kb Binning, generiert durch `genome_coverage.py` |
+The files are grouped by workflow:
 
-### 🌍 Kraken2-Workflow
+### 🔬 Minimap2 Workflow
 
-| Dateiname | Beschreibung |
-|----------|--------------|
-| [`wf-metagenomics-report_kraken2.html`](./examples/wf-metagenomics-report_kraken2.html) | Ergebnisübersicht des EPI2ME-Workflows mit Kraken2-Datenbank (breite Klassifikation über viele Taxa) |
+| Filename | Description |
+|----------|-------------|
+| [`wf-metagenomics-report_minimap2.html`](./examples/wf-metagenomics-report_minimap2.html) | Summary of the EPI2ME workflow using Minimap2 (classified against custom reference genomes) |
+| [`coverage_report_Lagopus_muta_10kb.html`](./examples/coverage_report_Lagopus_muta_10kb.html) | Detailed coverage report for *Lagopus muta* with 10kb binning, generated using `genome_coverage.py` |
+
+### 🌍 Kraken2 Workflow
+
+| Filename | Description |
+|----------|-------------|
+| [`wf-metagenomics-report_kraken2.html`](./examples/wf-metagenomics-report_kraken2.html) | Summary of the EPI2ME workflow using the Kraken2 database (broad classification across many taxa) |
+
+---
+
+## 🖼️ Preview of Analysis Results
+
+The following screenshots provide examples of how the generated HTML reports appear in the browser.  
+They are based on files in the [`examples/`](./examples/) folder and offer a quick visual overview of layout, interactivity, and analysis depth.
+
+### 🔬 Minimap2 + Coverage Analysis
+
+**Workflow output with Minimap2 (Nextflow / EPI2ME):**
+
+![Minimap2 Report](./images/epi2me_metagenomics_minimap2.png)
+
+**Coverage report for *Lagopus muta*** (`genome_coverage.py` with 10 kb binning):
+
+![Coverage Lagopus](./images/coverage_analyis_lagopus_example.png)
+
+---
+
+### 🌍 Kraken2 Results
+
+**Workflow output with Kraken2 (Nextflow / EPI2ME):**
+
+![Kraken2 Report](./images/epi2me_metagenomics_kraken2.png)
