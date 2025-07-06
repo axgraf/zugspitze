@@ -169,7 +169,13 @@ cd referenceGenome
 chmod +x generate_mapping.sh
 ./generate_mapping.sh
 ```
-This file is required as --mapping input for genome_coverage.py.
+This will generate a file in `mappings/combined_mapping.tsv` with three columns containing:
+
+- FASTA name (e.g., NCBI accession number)  
+- Species name  
+- Chromosome/contig name
+
+This file is required as `--mapping` input for `genome_coverage.py`.
 
 ## 🚀 EPI2ME Workflow with Minimap2
 
@@ -224,6 +230,9 @@ nextflow run epi2me-labs/wf-metagenomics \
 ## 🧪 Automated Analysis with Minimap2
 
 For a fully automated execution of the Minimap2-based metagenomics workflow including coverage analysis, use the Bash script [`run_metagenome_minimap2.sh`](./scripts/run_metagenome_minimap2.sh).
+
+> ⚠️ **Warning:**  
+> This script contains hardcoded paths that may need to be adjusted depending on your environment and directory structure.
 
 ### Usage
 
@@ -336,6 +345,10 @@ nextflow run epi2me-labs/wf-metagenomics \
 
 To automate the Kraken2-based analysis, use the script [`run_metagenome_kraken2.sh`](./scripts/run_metagenome_kraken2.sh).  
 This script invokes the Nextflow workflow with predefined paths to the Kraken2 database and taxonomy archive.
+
+> ⚠️ **Warning:**  
+> This script contains hardcoded paths that may need to be adjusted depending on your environment and directory structure.
+
 
 ### Usage
 

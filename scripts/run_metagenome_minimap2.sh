@@ -14,8 +14,11 @@
 INPUT_DIR=$1
 OUTPUT_DIR=$2
 SPECIES=$3
-BIN_SIZE=${4:-1000}  # default: 1000 if not provided
+BIN_SIZE=${4:-10000}  # default: 10000 if not provided
 
+MINIMAP2_INDEX="referenceGenome/combined_genomes/LeTim_LagMut_LyrTet.genome.mmi"
+REF2TAXID="referenceGenome/combined_genomes/ref2taxid.targloci.tsv"
+TAXDUMP="referenceGenome/taxdump/new_taxdump.tar.gz"
 GENOME_COVERAGE_BED="/home/alex/zugspitze/referenceGenome/mappings/combined_mapping.tsv"
 GENOME_COVERAGE_PYTHON="/home/alex/PycharmProjects/zugspitze/genome_coverage.py"
 
@@ -41,7 +44,15 @@ if [ "$is_valid_species" = false ]; then
   exit 1
 fi
 
-nextflow run epi2me-labs/wf-metagenomics --fastq $INPUT_DIR --classifier minimap2 --reference referenceGenome/combined_genomes/LeTim_LagMut_LyrTet.genome.mmi --ref2taxid referenceGenome/combined_genomes/ref2taxid.targloci.tsv --out_dir $OUTPUT_DIR --keep_bam --taxonomy referenceGenome/taxdump/new_taxdump.tar.gz -process.maxForks=1
+nextflow run epi2me-labs/wf-metagenomics \
+            --fastq $INPUT_DIR \
+            --classifier minimap2 \
+            --reference ${MINIMAP2_INDEX} \
+            --ref2taxid ${REF2TAXID} \
+            --out_dir $OUTPUT_DIR \
+            --keep_bam \
+            --taxonomy ${TAXDUMP} \
+            -process.maxForks=1
 
 mkdir -p ${OUTPUT_DIR}/genome_coverage_analysis
 for barcode_bam in ${OUTPUT_DIR}/bams/*.bam; do
@@ -58,5 +69,5 @@ for barcode_bam in ${OUTPUT_DIR}/bams/*.bam; do
                 --bam $barcode_bam \
                 --output_dir ${OUTPUT_DIR}/genome_coverage_analysis/$bc \
                 --species "Lagopus muta" \
-                --bin_size 1000
+                --bin_size 10000
 done
