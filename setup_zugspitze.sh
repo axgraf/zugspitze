@@ -47,6 +47,10 @@ else
   mamba create -n "$ENV_NAME" -c conda-forge -c bioconda "${REQUIRED_PACKAGES[@]}" --yes
 fi
 
+echo "🐍 Activating conda environment '$ENV_NAME'..."
+eval "$(conda shell.bash hook)"
+conda activate "$ENV_NAME"
+
 # Docker check and install
 echo "🐳 Checking for Docker..."
 if ! command -v docker &>/dev/null; then
