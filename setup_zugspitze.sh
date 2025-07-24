@@ -19,7 +19,7 @@ env_exists() {
 # Function: Check if all required packages are installed
 env_has_all_packages() {
   for pkg in "${REQUIRED_PACKAGES[@]}"; do
-    if ! conda run -n "$ENV_NAME" which "$pkg" &>/dev/null; then
+    if ! conda list -n "$ENV_NAME" "$pkg" | grep -q "^$pkg"; then
       return 1
     fi
   done
@@ -196,5 +196,46 @@ zcat ${REFERENCE_DIR}/Lyrurus_tetrix/*.fna.gz \
 cat "$MAPPING_DIR"/{lagopus_mapping.tsv,lepus_mapping.tsv,lyrurus_mapping.tsv} > "$MAPPING_DIR/combined_mapping.tsv"
 
 echo "✅ Mapping file created at: $MAPPING_DIR/combined_mapping.tsv"
+
+
+echo "🧬 Preparing Kraken2 database (PlusPFP-16GB)..."
+
+KRAKEN_DB_DIR="${REFERENCE_DIR}/kraken2_db/k2_pluspf_16gb"
+KRAKEN_DB_TAR="k2_pluspf_16gb_20250402.tar.gz"
+KRAKEN_DB_URL="https://genome-idx.s3.amazonaws.com/kraken/${KRAKEN_DB_TAR}"
+
+mkdir -p "$KRAKEN_DB_DIR"
+
+if [[ ! -f "${KRAKEN_DB_DIR}/${KRAKEN_DB_TAR}" ]]; then
+  echo "📦 Downloading Kraken2 DB (~15 GB)..."
+  wget -c -O "${KRAKEN_DB_DIR}/${KRAKEN_DB_TAR}" "$KRAKEN_DB_URL"
+else
+  echo "✅ Kraken2 DB archive already exists."
+fi
+
+# Entpacken (nur wenn noch nicht entpackt)
+if [[ ! -f "${KRAKEN_DB_DIR}/hash.k2d" ]]; then
+  echo "📦 Extracting Kraken2 DB..."
+  tar -xf "${KRAKEN_DB_DIR}/${KRAKEN_DB_TAR}" -C "$KRAKEN_DB_DIR"
+else
+  echo "✅ Kraken2 DB already extracted."
+fi
+
+# Taxdump
+TAXONOMY_DIR="${REFERENCE_DIR}/kraken2_db/taxonomy"
+mkdir -p "$TAXONOMY_DIR"
+TAXDUMP_TAR="${TAXONOMY_DIR}/new_taxdump.tar.gz"
+
+if [[ ! -f "$TAXDUMP_TAR" ]]; then
+  echo "📥 Downloading NCBI taxonomy archive..."
+  wget -O "$TAXDUMP_TAR" https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/new_taxdump/new_taxdump.tar.gz
+else
+  echo "✅ NCBI taxonomy archive already exists."
+fi
+
+echo "🧪 Testing kraken2..."
+conda run -n "$ENV_NAME" kraken2 --version
+
+echo "✅ Kraken2 setup complete."
 
 echo "🎯 Setup complete!"

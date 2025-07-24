@@ -18,4 +18,8 @@ if [ -z "$1" ] || [ -z "$2" ]; then
   exit 1
 fi
 
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+cd "$PROJECT_ROOT"
+
 nextflow run epi2me-labs/wf-metagenomics --fastq $INPUT_DIR --database $KRAKEN2_DB --taxonomy $TAXONOMY --out_dir $OUTPUT_DIR
