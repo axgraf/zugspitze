@@ -63,6 +63,7 @@ Based on the official **EPI2ME workflows** by Oxford Nanopore:
 | `seqkit`       | FASTA/FASTQ manipulation (optional)     |
 | `matplotlib`   | Visualization                           |
 
+
 > Most tools are installed in the Conda environment `zugspitze_metagenome`.
 
 ---
@@ -73,7 +74,7 @@ Based on the official **EPI2ME workflows** by Oxford Nanopore:
 # Create Conda environment
 mamba create -n zugspitze_metagenome \
   -c conda-forge -c bioconda \
-  nextflow seqkit kraken2 pysam pandas plotly mosdepth matplotlib \
+  nextflow seqkit kraken2 pysam pandas plotly mosdepth matplotlib minimap2 \
   --yes
 
 mamba activate zugspitze_metagenome

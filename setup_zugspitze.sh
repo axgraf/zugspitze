@@ -2,7 +2,7 @@
 set -e
 
 ENV_NAME="zugspitze_metagenome"
-REQUIRED_PACKAGES=("nextflow" "seqkit" "kraken2" "pysam" "pandas" "plotly" "mosdepth" "matplotlib")
+REQUIRED_PACKAGES=("nextflow" "seqkit" "kraken2" "pysam" "pandas" "plotly" "mosdepth" "matplotlib", "minimap2")
 REFERENCE_DIR="referenceGenome"
 COMBINED_FASTA="${REFERENCE_DIR}/combined_genomes/combined_genomes.fasta.gz"
 MMI_INDEX="${REFERENCE_DIR}/combined_genomes/combined_genomes.mmi"
