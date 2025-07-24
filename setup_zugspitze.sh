@@ -26,6 +26,95 @@ env_has_all_packages() {
   return 0
 }
 
+prepare_minimap2_index() {
+  local name=$1         # "combined_genomes" oder "all_references"
+  local species_list=("${!2}")  # Array mit Artennamen
+  local taxid_map=$3    # assoziatives Array mit Art → TaxID
+
+  local OUT_DIR="${REFERENCE_DIR}/${name}"
+  mkdir -p "$OUT_DIR"
+  local FASTA="${OUT_DIR}/${name}.fasta.gz"
+  local MMI="${OUT_DIR}/${name}.mmi"
+  local REF2TAXID="${OUT_DIR}/ref2taxid.targloci.tsv"
+  local MAPPING_DIR="${OUT_DIR}/mappings"
+  local COMBINED_MAPPING="${MAPPING_DIR}/combined_mapping.tsv"
+
+  echo "🧬 Building FASTA for index: $name"
+  if [[ ! -f "$FASTA" ]]; then
+    for SPECIES in "${species_list[@]}"; do
+      cat "${REFERENCE_DIR}/${SPECIES}"/*.fna.gz
+    done > "$FASTA"
+  fi
+
+  echo "🔧 Building minimap2 index for $name..."
+  if [[ ! -f "$MMI" ]]; then
+    minimap2 -t 8 -x map-ont -d "$MMI" "$FASTA"
+  fi
+
+  echo "🔗 Creating ref2taxid for $name..."
+  if [[ ! -f "$REF2TAXID" ]]; then
+    > "$REF2TAXID"
+    for SPECIES in "${species_list[@]}"; do
+      TAXID=${taxid_map[$SPECIES]}
+      zgrep "^>" "${REFERENCE_DIR}/${SPECIES}"/*.fna.gz | cut -d' ' -f1 | sed 's/^>//' | awk -v taxid="$TAXID" '{print $0 "\t" taxid}' >> "$REF2TAXID"
+    done
+  fi
+
+  echo "🗺️ Generating mapping file for $name..."
+  mkdir -p "$MAPPING_DIR"
+  if [[ ! -f "$COMBINED_MAPPING" ]]; then
+    > "$COMBINED_MAPPING"
+    for SPECIES in "${species_list[@]}"; do
+      case $SPECIES in
+        Lagopus_muta|Lepus_timidus)
+          zcat "${REFERENCE_DIR}/${SPECIES}"/*.fna.gz \
+            | grep "^>" \
+            | sed 's/^>//' \
+            | awk -v sname="${SPECIES//_/ }" '{
+                chrom = "unknown"
+                for (i=1; i<NF; i++) {
+                  if ($i == "chromosome") {
+                    chrom = $i " " $(i+1)
+                    if ($(i+2) == "unlocalized") chrom = chrom " unlocalized"
+                    break
+                  }
+                }
+                gsub(/,/, "", chrom)
+                print $1 "\t" sname "\t" chrom
+            }' >> "$COMBINED_MAPPING"
+          ;;
+        Lyrurus_tetrix)
+          zcat "${REFERENCE_DIR}/${SPECIES}"/*.fna.gz \
+            | grep "^>" \
+            | sed 's/^>//' \
+            | awk -v sname="Lyrurus tetrix" '{
+                scaf = "unknown"
+                for (i=1; i<=NF; i++) {
+                  if ($i ~ /HRSCAF_[0-9]+/) {
+                    scaf = $i
+                    gsub(/.*HRSCAF_/, "HRSCAF_", scaf)
+                    gsub(/,/, "", scaf)
+                    break
+                  }
+                }
+                print $1 "\t" sname "\t" scaf
+            }' >> "$COMBINED_MAPPING"
+          ;;
+        *)
+          # Für andere: dummy mapping (optional später anpassen)
+          zcat "${REFERENCE_DIR}/${SPECIES}"/*.fna.gz \
+            | grep "^>" \
+            | sed 's/^>//' \
+            | awk -v sname="${SPECIES//_/ }" '{print $1 "\t" sname "\tunknown"}' \
+            >> "$COMBINED_MAPPING"
+          ;;
+      esac
+    done
+  fi
+
+  echo "✅ [$name] Setup done."
+}
+
 # Check for mamba
 if ! command -v mamba &>/dev/null; then
   echo "❌ Mamba not found. Please install Mamba or Miniconda first."
@@ -68,139 +157,29 @@ fi
 # Reference Genomes
 echo "📥 Preparing reference genomes..."
 
-declare -A GENOMES=(
-  ["Lepus_timidus"]="https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/040/893/245/GCA_040893245.2_mLepTim1.1_pri/GCA_040893245.2_mLepTim1.1_pri_genomic.fna.gz"
-  ["Lagopus_muta"]="https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/023/343/835/GCF_023343835.1_bLagMut1_primary/GCF_023343835.1_bLagMut1_primary_genomic.fna.gz"
-  ["Lyrurus_tetrix"]="https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/043/882/375/GCA_043882375.1_ASM4388237v1/GCA_043882375.1_ASM4388237v1_genomic.fna.gz"
+# 3-Arten-Index
+DEFAULT_SPECIES=("Lepus_timidus" "Lagopus_muta" "Lyrurus_tetrix")
+declare -A TAXIDS_DEFAULT=(
+  ["Lepus_timidus"]=62621
+  ["Lagopus_muta"]=64668
+  ["Lyrurus_tetrix"]=1233216
 )
+prepare_minimap2_index "combined_genomes" DEFAULT_SPECIES[@] TAXIDS_DEFAULT
 
-mkdir -p "${REFERENCE_DIR}/combined_genomes"
-
-for SPECIES in "${!GENOMES[@]}"; do
-  DIR="${REFERENCE_DIR}/${SPECIES}"
-  URL="${GENOMES[$SPECIES]}"
-  mkdir -p "$DIR"
-  FILE="$DIR/$(basename "$URL")"
-  if [[ ! -f "$FILE" ]]; then
-    echo "🔽 Downloading $SPECIES genome..."
-    wget -q -O "$FILE" "$URL"
-  else
-    echo "✅ Genome for $SPECIES already exists."
-  fi
-done
-
-
-# Combine genomes
-if [[ ! -f "$COMBINED_FASTA" ]]; then
-  echo "🧬 Combining genomes..."
-  cat \
-    ${REFERENCE_DIR}/Lepus_timidus/*.fna.gz \
-    ${REFERENCE_DIR}/Lagopus_muta/*.fna.gz \
-    ${REFERENCE_DIR}/Lyrurus_tetrix/*.fna.gz \
-    > "$COMBINED_FASTA"
-else
-  echo "✅ Combined genome file already exists."
-fi
-
-# Minimap2 Index
-if [[ ! -f "$MMI_INDEX" ]]; then
-  echo "🔧 Building Minimap2 index..."
-  conda run -n "$ENV_NAME" minimap2 -t 8 -x map-ont -d "$MMI_INDEX" "$COMBINED_FASTA"
-else
-  echo "✅ Minimap2 index already exists."
-fi
+# 7-Arten-Index (optional)
+ALL_SPECIES=("Lepus_timidus" "Lagopus_muta" "Lyrurus_tetrix" "Tetrao_urogallus" "Mustela_erminea" "Rupicapra_rupicapra" "Ovis_aries")
+declare -A TAXIDS_ALL=(
+  ["Lepus_timidus"]=62621
+  ["Lagopus_muta"]=64668
+  ["Lyrurus_tetrix"]=1233216
+  ["Tetrao_urogallus"]=100830
+  ["Mustela_erminea"]=36723
+  ["Rupicapra_rupicapra"]=64668
+  ["Ovis_aries"]=9940
+)
+prepare_minimap2_index "all_references" ALL_SPECIES[@] TAXIDS_ALL
 
 
-# ref2taxid
-if [[ ! -f "$REF2TAXID" ]]; then
-  echo "🔗 Creating ref2taxid file..."
-  cd "${REFERENCE_DIR}/combined_genomes"
-  zgrep "^>" ../Lepus_timidus/*.fna.gz | cut -d' ' -f1 | sed 's/^>//' | awk '{print $0 "\t62621"}' > lepus.tsv
-  zgrep "^>" ../Lagopus_muta/*.fna.gz | cut -d' ' -f1 | sed 's/^>//' | awk '{print $0 "\t64668"}' > lagopus.tsv
-  zgrep "^>" ../Lyrurus_tetrix/*.fna.gz | cut -d' ' -f1 | sed 's/^>//' | awk '{print $0 "\t1233216"}' > lyrurus.tsv
-  cat lepus.tsv lagopus.tsv lyrurus.tsv > ref2taxid.targloci.tsv
-  echo "✅ ref2taxid file created."
-  cd - >/dev/null
-else
-  echo "✅ ref2taxid file already exists."
-fi
-
-# -----------------------------------------------
-# 🗺️ Generate mapping file for genome_coverage.py
-# -----------------------------------------------
-
-MAPPING_DIR="${REFERENCE_DIR}/mappings"
-COMBINED_MAPPING="$MAPPING_DIR/combined_mapping.tsv"
-
-if [[ ! -f "$COMBINED_MAPPING" ]]; then
-  echo "🗺️ Generating mapping file for genome_coverage.py..."
-  mkdir -p "$MAPPING_DIR"
-
-  # Lagopus muta
-  echo "📍 Lagopus muta..."
-  zcat ${REFERENCE_DIR}/Lagopus_muta/*.fna.gz \
-    | grep "^>" \
-    | sed 's/^>//' \
-    | awk '{
-        chrom = "unknown"
-        for (i=1; i<NF; i++) {
-            if ($i == "chromosome") {
-                chrom = $i " " $(i+1)
-                if ($(i+2) == "unlocalized") {
-                    chrom = chrom " unlocalized"
-                }
-                break
-            }
-        }
-        gsub(/,/, "", chrom)
-        print $1 "\tLagopus muta\t" chrom
-    }' > "$MAPPING_DIR/lagopus_mapping.tsv"
-
-  # Lepus timidus
-  echo "📍 Lepus timidus..."
-  zcat ${REFERENCE_DIR}/Lepus_timidus/*.fna.gz \
-    | grep "^>" \
-    | sed 's/^>//' \
-    | awk '{
-        chrom = "unknown"
-        for (i=1; i<NF; i++) {
-            if ($i == "chromosome") {
-                chrom = $i " " $(i+1)
-                if ($(i+2) == "unlocalized") {
-                    chrom = chrom " unlocalized"
-                }
-                break
-            }
-        }
-        gsub(/,/, "", chrom)
-        print $1 "\tLepus timidus\t" chrom
-    }' > "$MAPPING_DIR/lepus_mapping.tsv"
-
-  # Lyrurus tetrix
-  echo "📍 Lyrurus tetrix..."
-  zcat ${REFERENCE_DIR}/Lyrurus_tetrix/*.fna.gz \
-    | grep "^>" \
-    | sed 's/^>//' \
-    | awk '{
-        scaf = "unknown"
-        for (i=1; i<=NF; i++) {
-            if ($i ~ /HRSCAF_[0-9]+/) {
-                scaf = $i
-                gsub(/.*HRSCAF_/, "HRSCAF_", scaf)
-                gsub(/,/, "", scaf)
-                break
-            }
-        }
-        print $1 "\tLyrurus tetrix\t" scaf
-    }' > "$MAPPING_DIR/lyrurus_mapping.tsv"
-
-  # Combine
-  cat "$MAPPING_DIR"/{lagopus_mapping.tsv,lepus_mapping.tsv,lyrurus_mapping.tsv} > "$COMBINED_MAPPING"
-
-  echo "✅ Mapping file created at: $COMBINED_MAPPING"
-else
-  echo "✅ Mapping file already exists: $COMBINED_MAPPING"
-fi
 
 echo "🧬 Preparing Kraken2 database (PlusPFP-16GB)..."
 
