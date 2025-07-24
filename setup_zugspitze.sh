@@ -136,7 +136,7 @@ mkdir -p "$MAPPING_DIR"
 
 # Lagopus muta
 echo "📍 Lagopus muta..."
-zcat "${REFERENCE_DIR}/Lagopus_muta/Lagopus_muta.fna.gz" \
+zcat "${REFERENCE_DIR}/Lagopus_muta/*.fna.gz" \
   | grep "^>" \
   | sed 's/^>//' \
   | awk '{
@@ -156,7 +156,7 @@ zcat "${REFERENCE_DIR}/Lagopus_muta/Lagopus_muta.fna.gz" \
 
 # Lepus timidus
 echo "📍 Lepus timidus..."
-zcat "${REFERENCE_DIR}/Lepus_timidus/Lepus_timidus.fna.gz" \
+zcat "${REFERENCE_DIR}/Lepus_timidus/*.fna.gz" \
   | grep "^>" \
   | sed 's/^>//' \
   | awk '{
@@ -176,7 +176,7 @@ zcat "${REFERENCE_DIR}/Lepus_timidus/Lepus_timidus.fna.gz" \
 
 # Lyrurus tetrix
 echo "📍 Lyrurus tetrix..."
-zcat "${REFERENCE_DIR}/Lyrurus_tetrix/Lyrurus_tetrix.fna.gz" \
+zcat "${REFERENCE_DIR}/Lyrurus_tetrix/*.fna.gz" \
   | grep "^>" \
   | sed 's/^>//' \
   | awk '{
