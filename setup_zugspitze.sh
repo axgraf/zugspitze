@@ -129,74 +129,78 @@ fi
 # 🗺️ Generate mapping file for genome_coverage.py
 # -----------------------------------------------
 
-echo "🗺️ Generating mapping file for genome_coverage.py..."
-
 MAPPING_DIR="${REFERENCE_DIR}/mappings"
-mkdir -p "$MAPPING_DIR"
+COMBINED_MAPPING="$MAPPING_DIR/combined_mapping.tsv"
 
-# Lagopus muta
-echo "📍 Lagopus muta..."
-zcat ${REFERENCE_DIR}/Lagopus_muta/*.fna.gz \
-  | grep "^>" \
-  | sed 's/^>//' \
-  | awk '{
-      chrom = "unknown"
-      for (i=1; i<NF; i++) {
-          if ($i == "chromosome") {
-              chrom = $i " " $(i+1)
-              if ($(i+2) == "unlocalized") {
-                  chrom = chrom " unlocalized"
-              }
-              break
-          }
-      }
-      gsub(/,/, "", chrom)
-      print $1 "\tLagopus muta\t" chrom
-  }' > "$MAPPING_DIR/lagopus_mapping.tsv"
+if [[ ! -f "$COMBINED_MAPPING" ]]; then
+  echo "🗺️ Generating mapping file for genome_coverage.py..."
+  mkdir -p "$MAPPING_DIR"
 
-# Lepus timidus
-echo "📍 Lepus timidus..."
-zcat ${REFERENCE_DIR}/Lepus_timidus/*.fna.gz \
-  | grep "^>" \
-  | sed 's/^>//' \
-  | awk '{
-      chrom = "unknown"
-      for (i=1; i<NF; i++) {
-          if ($i == "chromosome") {
-              chrom = $i " " $(i+1)
-              if ($(i+2) == "unlocalized") {
-                  chrom = chrom " unlocalized"
-              }
-              break
-          }
-      }
-      gsub(/,/, "", chrom)
-      print $1 "\tLepus timidus\t" chrom
-  }' > "$MAPPING_DIR/lepus_mapping.tsv"
+  # Lagopus muta
+  echo "📍 Lagopus muta..."
+  zcat ${REFERENCE_DIR}/Lagopus_muta/*.fna.gz \
+    | grep "^>" \
+    | sed 's/^>//' \
+    | awk '{
+        chrom = "unknown"
+        for (i=1; i<NF; i++) {
+            if ($i == "chromosome") {
+                chrom = $i " " $(i+1)
+                if ($(i+2) == "unlocalized") {
+                    chrom = chrom " unlocalized"
+                }
+                break
+            }
+        }
+        gsub(/,/, "", chrom)
+        print $1 "\tLagopus muta\t" chrom
+    }' > "$MAPPING_DIR/lagopus_mapping.tsv"
 
-# Lyrurus tetrix
-echo "📍 Lyrurus tetrix..."
-zcat ${REFERENCE_DIR}/Lyrurus_tetrix/*.fna.gz \
-  | grep "^>" \
-  | sed 's/^>//' \
-  | awk '{
-      scaf = "unknown"
-      for (i=1; i<=NF; i++) {
-          if ($i ~ /HRSCAF_[0-9]+/) {
-              scaf = $i
-              gsub(/.*HRSCAF_/, "HRSCAF_", scaf)
-              gsub(/,/, "", scaf)
-              break
-          }
-      }
-      print $1 "\tLyrurus tetrix\t" scaf
-  }' > "$MAPPING_DIR/lyrurus_mapping.tsv"
+  # Lepus timidus
+  echo "📍 Lepus timidus..."
+  zcat ${REFERENCE_DIR}/Lepus_timidus/*.fna.gz \
+    | grep "^>" \
+    | sed 's/^>//' \
+    | awk '{
+        chrom = "unknown"
+        for (i=1; i<NF; i++) {
+            if ($i == "chromosome") {
+                chrom = $i " " $(i+1)
+                if ($(i+2) == "unlocalized") {
+                    chrom = chrom " unlocalized"
+                }
+                break
+            }
+        }
+        gsub(/,/, "", chrom)
+        print $1 "\tLepus timidus\t" chrom
+    }' > "$MAPPING_DIR/lepus_mapping.tsv"
 
-# Combine
-cat "$MAPPING_DIR"/{lagopus_mapping.tsv,lepus_mapping.tsv,lyrurus_mapping.tsv} > "$MAPPING_DIR/combined_mapping.tsv"
+  # Lyrurus tetrix
+  echo "📍 Lyrurus tetrix..."
+  zcat ${REFERENCE_DIR}/Lyrurus_tetrix/*.fna.gz \
+    | grep "^>" \
+    | sed 's/^>//' \
+    | awk '{
+        scaf = "unknown"
+        for (i=1; i<=NF; i++) {
+            if ($i ~ /HRSCAF_[0-9]+/) {
+                scaf = $i
+                gsub(/.*HRSCAF_/, "HRSCAF_", scaf)
+                gsub(/,/, "", scaf)
+                break
+            }
+        }
+        print $1 "\tLyrurus tetrix\t" scaf
+    }' > "$MAPPING_DIR/lyrurus_mapping.tsv"
 
-echo "✅ Mapping file created at: $MAPPING_DIR/combined_mapping.tsv"
+  # Combine
+  cat "$MAPPING_DIR"/{lagopus_mapping.tsv,lepus_mapping.tsv,lyrurus_mapping.tsv} > "$COMBINED_MAPPING"
 
+  echo "✅ Mapping file created at: $COMBINED_MAPPING"
+else
+  echo "✅ Mapping file already exists: $COMBINED_MAPPING"
+fi
 
 echo "🧬 Preparing Kraken2 database (PlusPFP-16GB)..."
 
