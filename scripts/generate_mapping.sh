@@ -68,3 +68,4 @@ echo "Combining mappings..."
 cat "$OUT_DIR/lagopus_mapping.tsv" "$OUT_DIR/lepus_mapping.tsv" "$OUT_DIR/lyrurus_mapping.tsv" > "$OUT_DIR/combined_mapping.tsv"
 
 echo "Final mapping file created: $OUT_DIR/combined_mapping.tsv"
+

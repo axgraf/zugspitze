@@ -33,11 +33,15 @@ Based on the official **EPI2ME workflows** by Oxford Nanopore:
 
 ## 🧬 Reference Genomes
 
-| Organism                       | Taxonomy ID | Assembly | Level      |
-|--------------------------------|-------------|----------|------------|
-| *Lepus timidus* (mountain hare) | 62621       | [GCA_040893245.2](https://www.ncbi.nlm.nih.gov/datasets/genome/GCA_040893245.2/) | Chromosome |
-| *Lyrurus tetrix* (black grouse) | 1233216     | [GCA_043882375.1](https://www.ncbi.nlm.nih.gov/datasets/genome/GCA_043882375.1/) | Scaffold   |
-| *Lagopus muta* (rock ptarmigan) | 64668       | [GCF_023343835.1](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_023343835.1/) | Chromosome |
+| Organism                                  | Taxonomy ID | Assembly | Level      |
+|-------------------------------------------|-------------|----------|------------|
+| *Lepus timidus* (Mountain hare)           | 62621       | [GCA_040893245.2](https://www.ncbi.nlm.nih.gov/datasets/genome/GCA_040893245.2/) | Chromosome |
+| *Lyrurus tetrix* (Black grouse)           | 1233216     | [GCA_043882375.1](https://www.ncbi.nlm.nih.gov/datasets/genome/GCA_043882375.1/) | Scaffold   |
+| *Lagopus muta* (Rock ptarmigan)           | 64668       | [GCF_023343835.1](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_023343835.1/) | Chromosome |
+| *Tetrao urogallus* (Western capercaillie) | 100830       | [GCA_951394365.1](https://www.ncbi.nlm.nih.gov/datasets/genome/GCA_951394365.1/) | Chromosome |
+| *Mustela erminea* (Ermine)                | 36723       | [GCF_023343835.1](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_009829155.1/) | Chromosome |
+| *Rupicapra rupicapra* (Chamois)           | 64668       | [GCF_023343835.1](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_023343835.1/) | Chromosome |
+| *Ovis aries* (Sheep)                      | 64668       | [GCF_023343835.1](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_023343835.1/) | Chromosome |
 
 > ⚠️ **Note:** Reference genomes should be regularly checked for updates.  
 > *Lyrurus tetrix* is currently only available at scaffold level (contigs only).
@@ -46,17 +50,18 @@ Based on the official **EPI2ME workflows** by Oxford Nanopore:
 
 ## 📦 Dependencies
 
-| Tool / Package | Purpose |
-|----------------|---------|
-| `nextflow`     | Workflow execution |
-| `docker`       | Runs EPI2ME containers |
-| `kraken2`      | Broad taxonomic classification |
+| Tool / Package | Purpose                                 |
+|----------------|-----------------------------------------|
+| `nextflow`     | Workflow execution                      |
+| `docker`       | Runs EPI2ME containers                  |
+| `kraken2`      | Broad taxonomic classification          |
 | `minimap2`     | Reference alignment (Minimap2 workflow) |
-| `mosdepth`     | Coverage calculation per BAM file |
-| `pysam`        | BAM processing in Python |
-| `pandas`       | Data analysis |
-| `plotly`       | Interactive charting |
-| `seqkit`       | FASTA/FASTQ manipulation (optional) |
+| `mosdepth`     | Coverage calculation per BAM file       |
+| `pysam`        | BAM processing in Python                |
+| `pandas`       | Data analysis                           |
+| `plotly`       | Interactive charting                    |
+| `seqkit`       | FASTA/FASTQ manipulation (optional)     |
+| `matplotlib`   | Visualization                           |
 
 > Most tools are installed in the Conda environment `zugspitze_metagenome`.
 
@@ -68,7 +73,7 @@ Based on the official **EPI2ME workflows** by Oxford Nanopore:
 # Create Conda environment
 mamba create -n zugspitze_metagenome \
   -c conda-forge -c bioconda \
-  nextflow seqkit kraken2 pysam pandas plotly mosdepth \
+  nextflow seqkit kraken2 pysam pandas plotly mosdepth matplotlib \
   --yes
 
 mamba activate zugspitze_metagenome
@@ -92,22 +97,26 @@ nextflow run epi2me-labs/wf-metagenomics --help
 Download the reference genomes for rock ptarmigan (*Lagopus muta*), black grouse (*Lyrurus tetrix*), and mountain hare (*Lepus timidus*), merge them, and create a Minimap2 index:
 
 ```bash
-mkdir -p referenceGenome/{Lepus_timidus,Lagopus_muta,Lyrurus_tetrix,combined_genomes,taxdump}
+mkdir -p referenceGenome/{Lepus_timidus,Lagopus_muta,Lyrurus_tetrix,Tetrao_urogallus,Mustela_erminea,Rupicapra_rupicapra,Ovis_aries,combined_genomes,taxdump}
 
 # Download genomes
 wget -P referenceGenome/Lepus_timidus https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/040/893/245/GCA_040893245.2_mLepTim1.1_pri/GCA_040893245.2_mLepTim1.1_pri_genomic.fna.gz
 wget -P referenceGenome/Lagopus_muta https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/023/343/835/GCF_023343835.1_bLagMut1_primary/GCF_023343835.1_bLagMut1_primary_genomic.fna.gz
 wget -P referenceGenome/Lyrurus_tetrix https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/043/882/375/GCA_043882375.1_ASM4388237v1/GCA_043882375.1_ASM4388237v1_genomic.fna.gz
+wget -P referenceGenome/Tetrao_urogallus https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/951/394/365/GCA_951394365.1_bTetUro1.1/GCA_951394365.1_bTetUro1.1_genomic.fna.gz
+wget -P referenceGenome/Mustela_erminea https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/009/829/155/GCF_009829155.1_mMusErm1.Pri/GCF_009829155.1_mMusErm1.Pri_genomic.fna.gz
+wget -P referenceGenome/Rupicapra_rupicapra https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/963/981/305/GCA_963981305.1_mRupRup1.1/GCA_963981305.1_mRupRup1.1_genomic.fna.gz
+wget -P referenceGenome/Ovis_aries https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/016/772/045/GCF_016772045.2_ARS-UI_Ramb_v3.0/GCF_016772045.2_ARS-UI_Ramb_v3.0_genomic.fna.gz
 
-# Merge genomes
+# Merge only three genomes because of RAM limitations
 cat referenceGenome/Lepus_timidus/*.gz \
     referenceGenome/Lagopus_muta/*.gz \
     referenceGenome/Lyrurus_tetrix/*.gz \
-    > referenceGenome/combined_genomes/LeTim_LagMut_LyrTet.genome.fasta.gz
+    > referenceGenome/combined_genomes/combined_genomes.fasta.gz
 
 # Create Minimap2 index
-minimap2 -t 8 -x map-ont -d referenceGenome/combined_genomes/LeTim_LagMut_LyrTet.genome.mmi \
-    referenceGenome/combined_genomes/LeTim_LagMut_LyrTet.genome.fasta.gz
+minimap2 -t 8 -x map-ont -d referenceGenome/combined_genomes/combined_genomes.mmi \
+    referenceGenome/combined_genomes/combined_genomes.fasta.gz
 
 # Download NCBI taxonomy
 wget -P referenceGenome/taxdump https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/new_taxdump/new_taxdump.tar.gz
@@ -187,6 +196,9 @@ Once all reference files (genome, index, taxonomy, `ref2taxid`, mapping) have be
 > - *Lagopus muta* (rock ptarmigan)
 > - *Lepus timidus* (mountain hare)
 > - *Lyrurus tetrix* (black grouse)
+> - *Mustela erminea* (ermine)
+> - *Rupicapra rupicapra* (chamois)
+> - *Ovis aries* (sheep)
 
 The following is a **basic manual execution example** using Nextflow.  
 ▶️ **For a fully automated version, see:** [🧪 Automated Analysis with Minimap2](#-automated-analysis-with-minimap2)
