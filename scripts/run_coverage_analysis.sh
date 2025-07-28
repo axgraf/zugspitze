@@ -25,7 +25,7 @@ BIN_SIZE=${4:-10000}  # default: 10000 if not provided
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(realpath "${SCRIPT_DIR}/..")"
 
-GENOME_COVERAGE_BED="${PROJECT_ROOT}/referenceGenome/mappings/combined_mapping.tsv"
+GENOME_COVERAGE_BED="${PROJECT_ROOT}/referenceGenome/combined_genomes/mappings/combined_mapping.tsv"
 GENOME_COVERAGE_PYTHON="${PROJECT_ROOT}/genome_coverage.py"
 
 VALID_SPECIES=("Lagopus muta" "Lepus timidus" "Lyrurus tetrix")
