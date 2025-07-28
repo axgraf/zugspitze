@@ -2,7 +2,7 @@
 set -e
 
 ENV_NAME="zugspitze_metagenome"
-REQUIRED_PACKAGES=("nextflow" "seqkit" "kraken2" "pysam" "pandas" "plotly" "mosdepth" "matplotlib" "minimap2")
+REQUIRED_PACKAGES=("nextflow" "seqkit" "kraken2" "pysam" "pandas" "plotly" "mosdepth" "matplotlib")
 REFERENCE_DIR="referenceGenome"
 COMBINED_FASTA="${REFERENCE_DIR}/combined_genomes/combined_genomes.fasta.gz"
 MMI_INDEX="${REFERENCE_DIR}/combined_genomes/combined_genomes.mmi"
@@ -55,7 +55,7 @@ prepare_minimap2_index() {
   if [[ ! -f "$REF2TAXID" ]]; then
     > "$REF2TAXID"
     for SPECIES in "${species_list[@]}"; do
-      TAXID=${taxid_map[$SPECIES]}
+      TAXID=$(eval "echo \${$3[$SPECIES]}")
       zgrep "^>" "${REFERENCE_DIR}/${SPECIES}"/*.fna.gz | cut -d' ' -f1 | sed 's/^>//' | awk -v taxid="$TAXID" '{print $0 "\t" taxid}' >> "$REF2TAXID"
     done
   fi
@@ -63,52 +63,29 @@ prepare_minimap2_index() {
   echo "🗺️ Generating mapping file for $name..."
   mkdir -p "$MAPPING_DIR"
   if [[ ! -f "$COMBINED_MAPPING" ]]; then
-    > "$COMBINED_MAPPING"
+    > "$COMBINED_MAPPING"  # einmalig leeren
+
     for SPECIES in "${species_list[@]}"; do
-      case $SPECIES in
-        Lagopus_muta|Lepus_timidus)
-          zcat "${REFERENCE_DIR}/${SPECIES}"/*.fna.gz \
-            | grep "^>" \
-            | sed 's/^>//' \
-            | awk -v sname="${SPECIES//_/ }" '{
-                chrom = "unknown"
-                for (i=1; i<NF; i++) {
-                  if ($i == "chromosome") {
-                    chrom = $i " " $(i+1)
-                    if ($(i+2) == "unlocalized") chrom = chrom " unlocalized"
-                    break
-                  }
-                }
-                gsub(/,/, "", chrom)
-                print $1 "\t" sname "\t" chrom
-            }' >> "$COMBINED_MAPPING"
-          ;;
-        Lyrurus_tetrix)
-          zcat "${REFERENCE_DIR}/${SPECIES}"/*.fna.gz \
-            | grep "^>" \
-            | sed 's/^>//' \
-            | awk -v sname="Lyrurus tetrix" '{
-                scaf = "unknown"
-                for (i=1; i<=NF; i++) {
-                  if ($i ~ /HRSCAF_[0-9]+/) {
-                    scaf = $i
-                    gsub(/.*HRSCAF_/, "HRSCAF_", scaf)
-                    gsub(/,/, "", scaf)
-                    break
-                  }
-                }
-                print $1 "\t" sname "\t" scaf
-            }' >> "$COMBINED_MAPPING"
-          ;;
-        *)
-          # Für andere: dummy mapping (optional später anpassen)
-          zcat "${REFERENCE_DIR}/${SPECIES}"/*.fna.gz \
-            | grep "^>" \
-            | sed 's/^>//' \
-            | awk -v sname="${SPECIES//_/ }" '{print $1 "\t" sname "\tunknown"}' \
-            >> "$COMBINED_MAPPING"
-          ;;
-      esac
+      echo "📍 Processing $SPECIES..."
+      zcat "${REFERENCE_DIR}/${SPECIES}"/*.fna.gz \
+      | grep "^>" \
+      | sed 's/^>//' \
+      | awk -v sname="${SPECIES//_/ }" '
+        function clean(x) { gsub(/,/, "", x); gsub(/[^[:alnum:]_:\- ]/, "", x); return x }
+        {
+          region = "unknown"
+          for (i = 1; i < NF; i++) {
+            if ($i == "chromosome" || $i == "chromosome:") { region = "chromosome " $(i+1); break }
+            if ($i ~ /^scaffold_/) { region = $i; break }
+            if ($i == "contig:" && $(i+1) ~ /^[A-Za-z0-9_]+$/) { region = $(i+1); break }
+            if ($i ~ /^HAP1_SCAFFOLD_/) { region = $i; break }
+            if ($i ~ /^SUPER_/) { region = $i; break }
+            if ($i == "organelle:" && $(i+1) == "mitochondrion") { region = "mitochondrion"; break }
+            if ($i ~ /mitochondrion/) { region = "mitochondrion"; break }
+            if ($i ~ /HRSCAF_[0-9]+/) { region = $i; break }
+          }
+          print $1 "\t" sname "\t" clean(region)
+        }' >> "$COMBINED_MAPPING"
     done
   fi
 
@@ -153,6 +130,36 @@ else
   echo "✅ Docker is already installed."
 fi
 
+# -----------------------------------------------
+# 📥 Download reference genomes (if missing)
+# -----------------------------------------------
+
+echo "🌐 Downloading reference genomes..."
+
+declare -A GENOMES=(
+  ["Lepus_timidus"]="https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/040/893/245/GCA_040893245.2_mLepTim1.1_pri/GCA_040893245.2_mLepTim1.1_pri_genomic.fna.gz"
+  ["Lagopus_muta"]="https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/023/343/835/GCF_023343835.1_bLagMut1_primary/GCF_023343835.1_bLagMut1_primary_genomic.fna.gz"
+  ["Lyrurus_tetrix"]="https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/043/882/375/GCA_043882375.1_ASM4388237v1/GCA_043882375.1_ASM4388237v1_genomic.fna.gz"
+  ["Tetrao_urogallus"]="https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/951/394/365/GCA_951394365.1_bTetUro1.1/GCA_951394365.1_bTetUro1.1_genomic.fna.gz"
+  ["Mustela_erminea"]="https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/009/829/155/GCF_009829155.1_mMusErm1.Pri/GCF_009829155.1_mMusErm1.Pri_genomic.fna.gz"
+  ["Rupicapra_rupicapra"]="https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/963/981/305/GCA_963981305.1_mRupRup1.1/GCA_963981305.1_mRupRup1.1_genomic.fna.gz"
+  ["Ovis_aries"]="https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/016/772/045/GCF_016772045.2_ARS-UI_Ramb_v3.0/GCF_016772045.2_ARS-UI_Ramb_v3.0_genomic.fna.gz"
+)
+
+for SPECIES in "${!GENOMES[@]}"; do
+  URL="${GENOMES[$SPECIES]}"
+  TARGET_DIR="${REFERENCE_DIR}/${SPECIES}"
+  FILENAME="$(basename "$URL")"
+  FILEPATH="${TARGET_DIR}/${FILENAME}"
+
+  mkdir -p "$TARGET_DIR"
+  if [[ ! -f "$FILEPATH" ]]; then
+    echo "🔽 Downloading $SPECIES..."
+    wget -q -O "$FILEPATH" "$URL"
+  else
+    echo "✅ $SPECIES already downloaded."
+  fi
+done
 
 # Reference Genomes
 echo "📥 Preparing reference genomes..."
